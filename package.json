@@ -2,11 +2,20 @@
   "name": "express-custom-router",
   "version": "1.0.0",
   "description": "Custom route matching for express.js",
-  "main": "index.js",
-  "keywords": ["express", "router"],
+  "main": "lib/CustomRouter.js",
+  "keywords": [
+    "express",
+    "router"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Edan Schwartz <edanschwartz@gmail.com>",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "express": "^4.14.0",
+    "mocha": "^2.5.3",
+    "sinon": "^1.17.4",
+    "supertest": "^1.2.0"
+  }
 }
