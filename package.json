@@ -8,7 +8,7 @@
     "router"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha --recursive ./test/spec"
   },
   "author": "Edan Schwartz <edanschwartz@gmail.com>",
   "license": "ISC",
