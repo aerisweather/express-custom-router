@@ -1,0 +1,12 @@
+{
+  "name": "express-custom-router",
+  "version": "1.0.0",
+  "description": "Custom route matching for express.js",
+  "main": "index.js",
+  "keywords": ["express", "router"],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Edan Schwartz <edanschwartz@gmail.com>",
+  "license": "ISC"
+}
