@@ -345,7 +345,22 @@ describe('CustomRouter', function() {
 
       request(app)
         .get('/')
-        .expect(() => assert(middleware.called, 'middleware was not called'))
+        .expect(() => assert(middleware.called, 'should have called middleware'))
+        .end(done);
+    });
+
+    it('should accept an array of middleware', (done) => {
+      const middlewareA = sinon.spy((req, res, next) => next());
+      const middlewareB = sinon.spy((req, res, next) => {
+        assert(middlewareA.called, 'should have called middlewareA, first');
+        res.send();
+      });
+
+      router.use([middlewareA, middlewareB]);
+
+      request(app)
+        .get('/')
+        .expect(() => assert(middlewareB.called, 'should have called middlewareB'))
         .end(done);
     });
 
