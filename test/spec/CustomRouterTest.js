@@ -74,6 +74,88 @@ describe('CustomRouter', function() {
         .end(done)
     });
 
+    it('should call `next(err)` if `match()` throws an error', (done) => {
+      const controller = sinon.spy((req, res) => res.send());
+      const onError = sinon.spy();
+
+      router.all(() => {
+        throw new Error('match error');
+      }, controller);
+
+      app.use((err, req, res, next) => {
+        assert.strictEqual(err.message, 'match error', 'should receive error from match()');
+        onError();
+        res.send();
+      });
+
+      request(app)
+        .get('/')
+        .expect(() => {
+          assert.strictEqual(controller.called, false, 'should not have called the controller');
+          assert.strictEqual(onError.called, true, 'should have called error handler');
+        })
+        .expect(200)
+        .end(done);
+    });
+
+    it('should end the request chain, if a controller throws an error', (done) => {
+      const controllerA = sinon.spy(() => {
+        throw new Error();
+      });
+      const controllerB = sinon.spy((req, res) => res.send());
+
+      router.all(() => true, controllerA);
+      router.all(() => true, controllerB);
+
+      request(app)
+        .get('/')
+        .expect(() => {
+          assert(controllerA.called, 'should call first');
+          assert.strictEqual(controllerB.called, false, 'should not call second controller');
+        })
+        .expect(500)
+        .end(done);
+    });
+
+    it('should end the request chain, if a controller calls `next(error)`', (done) => {
+      const controllerA = sinon.spy((req, res, next) => {
+        next(new Error());
+      });
+      const controllerB = sinon.spy((req, res) => res.send());
+
+      router.all(() => true, controllerA);
+      router.all(() => true, controllerB);
+
+      request(app)
+        .get('/')
+        .expect(() => {
+          assert(controllerA.called, 'should call first');
+          assert.strictEqual(controllerB.called, false, 'should not call second controller');
+        })
+        .expect(500)
+        .end(done);
+    });
+
+    it('should pass errors to the app-level error handler', (done) => {
+      const controller = sinon.spy((req, res, next) => next(new Error()));
+      const onError = sinon.spy();
+
+      router.get(() => true, controller);
+      app.use((err, req, res, next) => {
+        assert(err instanceof Error, 'should have received an error');
+        onError();
+        res.send();
+      });
+
+      request(app)
+        .get('/')
+        .expect(() => {
+          assert(controller.called, 'should have called controller');
+          assert(onError.called, 'should have called error handler');
+        })
+        .end(done);
+    });
+
     it('should accept a chain of controllers, mounted together', (done) => {
       const controllerA = sinon.spy((req, res, next) => next());
       const controllerB = sinon.spy((req, res, next) => {
@@ -252,9 +334,9 @@ describe('CustomRouter', function() {
 
   });
 
-  describe('use', function(done) {
+  describe('use', function() {
 
-    it('should invoke the middleware for all requests', () => {
+    it('should invoke the middleware for all requests', (done) => {
       const middleware = sinon.spy((req, res, next) => {
         next();
       });
@@ -264,6 +346,49 @@ describe('CustomRouter', function() {
       request(app)
         .get('/')
         .expect(() => assert(middleware.called, 'middleware was not called'))
+        .end(done);
+    });
+
+    it('should not invoke the middleware, if a previous controller throws an error', (done) => {
+      const controller = sinon.spy((req, res, next) => {
+        next(new Error('test error'));
+      });
+      const middleware = sinon.spy();
+
+      router.all(() => true, controller);
+      router.use(middleware);
+
+      request(app)
+        .get('/')
+        .expect(() => {
+          assert(controller.called, 'should have called controller');
+          assert.strictEqual(middleware.called, false, 'should not have called middleware');
+        })
+        .expect(500)
+        .end(done);
+    });
+
+    it('should act as an error handler, if an error argument is included', (done) => {
+      const controller = sinon.spy((req, res, next) => {
+        next(new Error('test error'));
+      });
+      const onError = sinon.spy();
+
+      router.all(() => true, controller);
+      router.use((err, req, res, next) => {
+        assert(err instanceof Error, 'received error');
+        assert.strictEqual(err.message, 'test error', 'error message');
+        onError();
+        res.send();
+      });
+
+      request(app)
+        .get('/')
+        .expect(() => {
+          assert(controller.called, 'should have called controller');
+          assert(onError.called, 'should have called error handler');
+        })
+        .expect(200)
         .end(done);
     });
 
