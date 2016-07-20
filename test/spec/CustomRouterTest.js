@@ -43,6 +43,30 @@ describe('CustomRouter', function() {
         .end(done);
     });
 
+    it('should use the controller for multiple requests', (done) => {
+      const controller = sinon.spy((req, res) => res.send());
+
+      router.all(() => true, controller);
+
+      request(app)
+        .get('/')
+        .expect(200)
+        .expect(res => {
+          assert.strictEqual(controller.callCount, 1, 'should have called controller the first time');
+        })
+        .end(err => {
+          if (err) { return done(err); }
+
+          request(app)
+            .get('/')
+            .expect(200)
+            .expect(res => {
+              assert.strictEqual(controller.callCount, 2, 'should have called controller a second time');
+            })
+            .end(done);
+        });
+    });
+
     it('should pass the request to `match()`', (done) => {
       const match = sinon.spy((req) => {
         assert(req instanceof http.IncomingMessage);
@@ -336,7 +360,7 @@ describe('CustomRouter', function() {
 
   describe('use', function() {
 
-    it('should invoke the middleware for all requests', (done) => {
+    it('should invoke the middleware for every request', (done) => {
       const middleware = sinon.spy((req, res, next) => {
         next();
       });
@@ -346,7 +370,15 @@ describe('CustomRouter', function() {
       request(app)
         .get('/')
         .expect(() => assert(middleware.called, 'should have called middleware'))
-        .end(done);
+        .end((err) => {
+          if (err) { return done(err); }
+
+          // Send a second request
+          request(app)
+            .get('/')
+            .expect(() => assert.strictEqual(middleware.callCount, 2, 'should have called middleware again'))
+            .end(done);
+        });
     });
 
     it('should accept an array of middleware', (done) => {
