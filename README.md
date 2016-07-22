@@ -50,20 +50,21 @@ For example:
 const app = express();
 const router = CustomRouter();
 
+// Middleware for manually parsing
+// request parameters
 router.use((req, res, next) => {
-  // Manually parse my request params
-  req.params = manuallyParseMyUrl(req.originalUrl);
+  req.opts = manuallyParseMyUrl(req.originalUrl);
   next();
 });
 
 // Setup routes, based on my manually parsed params
 router.get(
-  req => req.foo.bar.baz === 'quux',
-  myQuuxController
+  req => req.opts.foo === 'bar',
+  (req, res) => res.send('foo is bar')
 );
 router.get(
-  req => req.foo.bar.baz === 'shazaam',
-  myShazaamController
+  req => req.opts.foo === 'quux',
+  (req, res) => res.send('foo is quux')
 );
 ```
 
